@@ -27,7 +27,13 @@ func main() {
 			dirPath, _ = os.Getwd()
 		}
 
-		files := listDSStoreFiles(dirPath)
+		files, skips := listDSStoreFiles(dirPath)
+		if len(skips) > 0 {
+			for _, skip := range skips {
+				fmt.Println(skip)
+			}
+			fmt.Printf("跳过查找以上共计%d个路径。\n", len(skips))
+		}
 		if len(files) == 0 {
 			fmt.Println("没有找到任何DS_Store文件。")
 			return nil
@@ -56,11 +62,13 @@ func main() {
 	}
 }
 
-func listDSStoreFiles(dirPath string) []string {
+func listDSStoreFiles(dirPath string) ([]string, []string) {
 	var files []string
+	var skips []string
 	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			skips = append(skips, path)
+			return nil
 		}
 		if info.Name() == ".DS_Store" {
 			files = append(files, path)
@@ -70,7 +78,7 @@ func listDSStoreFiles(dirPath string) []string {
 	if err != nil {
 		fmt.Printf("遍历目录发生错误: %v\n", err)
 	}
-	return files
+	return files, skips
 }
 
 func deleteDSStoreFiles(files []string) {
